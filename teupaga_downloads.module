@@ -1,0 +1,80 @@
+<?php
+
+/**
+ * @file
+ * Ensures secure and restricted downloads of boooks for the
+ * Teupaga digital buddhist library
+ */
+
+/*
+Example of a call to watchdog:
+watchdog('teupaga', 'teupaga_downloads_permission');
+*/
+
+/**
+ * Implements hook_permission().
+ *
+ * Defines the permission to download books.
+ */
+function teupaga_downloads_permission() {
+  return array(
+    'download books' => array(
+      'title' => t('download books'),
+      'description' => t('Specifies who can download books'),
+    ),
+  );
+}
+
+/**
+ * Implements hook_menu().
+ *
+ * Provides a menu entry for downloading books.
+ */
+function teupaga_downloads_menu() {
+  $items['livres'] = array(
+    'access arguments' => array('download books'),
+    'type' => MENU_CALLBACK,
+    'page callback' => 'teupaga_downloads_menu_callback',
+  );
+  return $items;
+}
+
+/**
+ * Called when a download is attempted.
+ */
+function teupaga_downloads_menu_callback() {
+  $args = func_get_args();
+  array_unshift($args, "private");
+  call_user_func_array("file_download", $args);
+}
+
+/**
+ * Implements hook_file_download().
+ *
+ * Performs the book download itself.
+ */
+function teupaga_downloads_file_download($file) {
+  if ($_SERVER['SERVER_PORT'] != '443') {
+    return -1;
+  }
+
+  $parameters = array(
+    'field_name' => 'field_document_url',
+    'entity_type' => 'field_collection_item',
+    'bundle' => 'field_bibitem'
+  );
+  $urls = field_read_instances($parameters);
+  ob_start();
+  var_dump($urls);
+  $result = ob_get_clean();
+  file_put_contents('/tmp/debug.txt', $result);
+
+  $mimetype = file_get_mimetype($file);
+  $size = filesize($file);
+  $name = mime_header_encode(basename($file));
+  return array(
+    'Content-type: ' . $mimetype,
+    'Content-Length: ' . $size,
+    'Content-Disposition: attachment; filename="' . $name . '"',
+  );
+}
