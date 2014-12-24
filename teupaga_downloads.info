@@ -1,5 +1,5 @@
 name = Teupaga Downloads
-description = Ensures secure and restricted download of books for the Teupaga buddhist digital library
+description = Restricts, secures and keeps track of downloads of books for the Teupaga buddhist digital library
 core = 7.x
 package = Teupaga
 
