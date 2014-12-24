@@ -1,0 +1,48 @@
+<?php
+
+/**
+ * @file
+ * What to do when installing this module.
+ */
+
+/**
+ * Implements hook_schema().
+ */
+function teupaga_downloads_schema() {
+  return array(
+    'teupaga_downloads' => array(
+      'description' => 'Table containing information related to the download of Teupaga books.',
+      'fields' => array(
+        'download_id' => array(
+          'description' => 'Download unique identifier',
+          'type' => 'serial',
+          'unsigned' => TRUE,
+          'not null' => TRUE,
+        ),
+        'user_id' => array(
+          'description' => 'User having downloaded the content',
+          'type' => 'int',
+          'unsigned' => TRUE,
+          'not null' => TRUE,
+        ),
+        'downlod_date' => array(
+          'description' => 'When did the download occur',
+          'type' => 'int',
+          'not null' => TRUE,
+        ),
+        'downloaded_item' => array(
+          'description' => 'Which item has been downloaded',
+          'type' => 'int',
+          'unsigned' => TRUE,
+        ),
+      ),
+      'foreign keys' => array(
+        'user_id' => array(
+          'table' => 'users',
+          'columns' => array('uid' => 'uid'),
+        ),
+      ),
+      'primary key' => array('download_id'),
+    ),
+  );
+}
