@@ -2,14 +2,9 @@
 
 /**
  * @file
- * Ensures secure and restricted downloads of boooks for the
+ * Secures, restricts and keeps track of downloads of boooks for the
  * Teupaga digital buddhist library
  */
-
-/*
-Example of a call to watchdog:
-watchdog('teupaga', 'teupaga_downloads_permission');
-*/
 
 /**
  * Implements hook_permission().
@@ -54,20 +49,37 @@ function teupaga_downloads_menu_callback() {
  * Performs the book download itself.
  */
 function teupaga_downloads_file_download($file) {
+  watchdog('teupaga', 'teupaga_downloads_file_download: entering');
+/*
   if ($_SERVER['SERVER_PORT'] != '443') {
+    watchdog('teupaga', 'teupaga_downloads_file_download: non-secured download attempted. Blocked.');
+    return -1;
+  }
+*/
+
+  $filename = file_uri_target($file);
+  watchdog('teupaga', "teupaga_downloads_file_download: trying to find item associated with file $filename");
+  $query = new EntityFieldQuery;
+  $results = $query
+    ->fieldCondition('field_document_url', 'value', $filename, 'CONTAINS')
+    ->execute();
+  
+  ob_start();
+  var_dump($results);
+  $resultsstr = ob_get_clean();
+  file_put_contents('/tmp/debug.txt', $resultsstr);
+
+  if ( count($results) < 1) {
+    watchdog('teupaga', "teupaga_downloads_file_download: No match found for $filename.");
     return -1;
   }
 
-  $parameters = array(
-    'field_name' => 'field_document_url',
-    'entity_type' => 'field_collection_item',
-    'bundle' => 'field_bibitem'
-  );
-  $urls = field_read_instances($parameters);
-  ob_start();
-  var_dump($urls);
-  $result = ob_get_clean();
-  file_put_contents('/tmp/debug.txt', $result);
+  if ( count($results) > 1) {
+    watchdog('teupaga', "teupaga_downloads_file_download: More than one match found for $filename.");
+    return -1;
+  }
+
+  /* Continue from here */
 
   $mimetype = file_get_mimetype($file);
   $size = filesize($file);
@@ -76,5 +88,57 @@ function teupaga_downloads_file_download($file) {
     'Content-type: ' . $mimetype,
     'Content-Length: ' . $size,
     'Content-Disposition: attachment; filename="' . $name . '"',
+  );
+  watchdog('teupaga', 'teupaga_downloads_file_download: leaving');
+}
+
+/**
+ * Implements hook_entity_info().
+ */
+function teupaga_downloads_entity_info() {
+  $info = array();
+
+  $info['teupaga_downloads'] = array(
+    'label' => t("Teupaga download"),
+    'plural label' => t("Teupaga Downloads"),
+    'description' => t("Represents a download event for a Teupaga book"),
+    'base table' => 'teupaga_downloads',
+    'entity keys' => array('id' => 'download_id'),
+  );
+
+  foreach ($info as $entity_name => &$settings) {
+    $settings['module'] = 'teupaga_downloads';
+    $settings['entity class'] = 'Entity';
+    $settings['controller class'] = 'EntityAPIController';
+    $settings['views controller class'] = 'EntityDefaultViewsController';
+    $settings['fieldable'] = TRUE;
+    $settings['label callback'] = 'entity_class_label';
+    $settings['uri callback'] = 'entity_class_uri';
+  }
+
+  return $info;
+}
+
+/**
+ * Implements hook_entity_property_info_alter().
+ */
+function teupaga_downloads_entity_property_info_alter(&$info) {
+  $info['teupaga_downloads']['properties']['user_id'] = array(
+    'label' => t('User'),
+    'description' => t("User downloading the content."),
+    'type' => 'user',
+    'schema field' => 'user_id',
+  );
+  $info['teupaga_downloads']['properties']['download_date'] = array(
+    'label' => t("Date of download"),
+    'description' => t("The date and time when the download occurred."),
+    'type' => 'date',
+    'schema field' => 'download_date',
+  );
+  $info['teupaga_downloads']['properties']['downloaded_item'] = array(
+    'label' => t("Downloaded item."),
+    'description' => t("The itemthat has been downloaded."),
+    'type' => 'field',
+    'schema field' => 'downloaded_item',
   );
 }
