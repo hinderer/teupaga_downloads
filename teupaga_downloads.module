@@ -61,7 +61,7 @@ function teupaga_downloads_file_download($file) {
   watchdog('teupaga', "teupaga_downloads_file_download: trying to find item associated with file $filename");
   $query = new EntityFieldQuery;
   $results = $query
-    ->fieldCondition('field_document_url', 'value', $filename, 'CONTAINS')
+    ->fieldCondition('field_document_link', 'url', $filename, 'CONTAINS')
     ->execute();
   
   ob_start();
