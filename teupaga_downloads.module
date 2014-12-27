@@ -49,6 +49,7 @@ function teupaga_downloads_menu_callback() {
  * Performs the book download itself.
  */
 function teupaga_downloads_file_download($file) {
+  global $user;
   watchdog('teupaga', 'teupaga_downloads_file_download: entering');
 /*
   if ($_SERVER['SERVER_PORT'] != '443') {
@@ -80,20 +81,29 @@ function teupaga_downloads_file_download($file) {
   }
 
   $user_id = $user->uid;
+  watchdog('teupaga', "teupaga_downloads_file_download: user_id=$user_id");
   $download_date = time();
-  $downloaded_item = 0;
+  $downloaded_item = 17; /* FIXME */
 
-  /* Continue from here */
+  $teupaga_download = entity_create(
+    'teupaga_downloads',
+    array(
+      'user_id' => $user_id,
+      'downlod_date' => $download_date,
+      'downloaded_item' => $downloaded_item
+    )
+  );
+  $teupaga_download->save();
 
   $mimetype = file_get_mimetype($file);
   $size = filesize($file);
   $name = mime_header_encode(basename($file));
+  watchdog('teupaga', 'teupaga_downloads_file_download: leaving (success)');
   return array(
     'Content-type: ' . $mimetype,
     'Content-Length: ' . $size,
     'Content-Disposition: attachment; filename="' . $name . '"',
   );
-  watchdog('teupaga', 'teupaga_downloads_file_download: leaving');
 }
 
 /**
