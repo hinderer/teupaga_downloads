@@ -79,6 +79,10 @@ function teupaga_downloads_file_download($file) {
     return -1;
   }
 
+  $user_id = $user->uid;
+  $download_date = time();
+  $downloaded_item = 0;
+
   /* Continue from here */
 
   $mimetype = file_get_mimetype($file);
